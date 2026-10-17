@@ -4,7 +4,8 @@ import shutil
 import sqlite3
 import subprocess
 import time
-from contextlib import closing, contextmanager
+from contextlib import closing
+from playlite.action_settings import update_action_files
 
 import yaml
 from PyQt6.QtCore import QSaveFile, QIODevice
@@ -155,7 +156,6 @@ def ensure_controller(parent=None):
         progress.close()
 
 
-@contextmanager
 def save_actions(game, root):
     changes = {}
     for action in game.get('PlayActions', []):
@@ -169,28 +169,7 @@ def save_actions(game, root):
         if path in changes and changes[path] != checked:
             raise ValueError('Actions sharing a Lutris entry must use the same Ultimate Mapper setting.')
         changes[path] = checked
-    originals = {}
-    try:
-        for path, checked in changes.items():
-            original = path.read_bytes()
-            update_configuration(path, checked)
-            current = path.read_bytes()
-            if current != original:
-                originals[path] = (original, current)
-        yield
-    except BaseException:
-        for path, (original, written) in reversed(list(originals.items())):
-            if path.read_bytes() != written:
-                raise ValueError('Lutris configuration changed during save; the newer changes were preserved.')
-            output = QSaveFile(str(path))
-            if not output.open(QIODevice.OpenModeFlag.WriteOnly):
-                raise OSError(output.errorString())
-            if output.write(original) != len(original):
-                output.cancelWriting()
-                raise OSError(output.errorString())
-            if not output.commit():
-                raise OSError(output.errorString())
-        raise
+    return update_action_files(changes, update_configuration)
 
 
 from PyQt6.QtWidgets import QWidget, QCheckBox, QVBoxLayout

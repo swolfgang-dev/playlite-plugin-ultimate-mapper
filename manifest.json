@@ -6,7 +6,7 @@
   "type": "generic",
   "enabled": true,
   "repository": "swolfgang-dev/playlite-plugin-ultimate-mapper",
-  "minimum_playlite_version": "0.2.86",
+  "minimum_playlite_version": "0.2.87",
   "requirements": ["PyYAML>=6"],
   "plugin_dependencies": [{
     "id": "LutrisIntegration",
