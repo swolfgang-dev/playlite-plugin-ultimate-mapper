@@ -1,0 +1,17 @@
+{
+  "id": "UltimateMapper",
+  "name": "Ultimate Mapper",
+  "version": "0.1.0",
+  "api_version": 1,
+  "type": "generic",
+  "enabled": true,
+  "repository": "swolfgang-dev/playlite-plugin-ultimate-mapper",
+  "minimum_playlite_version": "0.2.86",
+  "requirements": ["PyYAML>=6"],
+  "plugin_dependencies": [{
+    "id": "LutrisIntegration",
+    "repository": "swolfgang-dev/playlite-plugin-lutris-integration",
+    "minimum_version": "1.1.24"
+  }],
+  "description": "Use Ultimate Mapper per Windows play action, with saved controller isolation and launch readiness checks."
+}
