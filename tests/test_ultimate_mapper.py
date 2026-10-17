@@ -154,13 +154,13 @@ class MapperTests(unittest.TestCase):
         editor.close()
 
     def test_failed_library_save_rolls_back_lutris_config(self):
-        from playlite.editor import _save_game
+        from playlite.game_storage import _save_game
         original = self.path.read_bytes()
         action = {'Integration': 'LutrisIntegration', 'GameId': '1', 'UltimateMapper': True}
         plugin = Plugin()
         with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime, \
              patch('playlite.providers.discover_plugins', return_value={'UltimateMapper': plugin}), \
-             patch('playlite.editor._persist_game', side_effect=OSError('disk full')):
+             patch('playlite.game_storage._persist_game', side_effect=OSError('disk full')):
             with self.assertRaises(OSError):
                 runtime.return_value.library_path.return_value = self.root
                 _save_game(self.root / 'library', [], {'PlayActions': [action]})
