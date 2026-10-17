@@ -93,6 +93,7 @@ def update_configuration(path, use_mapper):
         raise OSError(output.errorString())
     if not output.commit():
         raise OSError(output.errorString())
+    return encoded
 
 
 def controller_available(root=Path('/sys/class/input')):
