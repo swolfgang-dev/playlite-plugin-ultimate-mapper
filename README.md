@@ -1,6 +1,6 @@
 # Ultimate Mapper for Playlite
 
-A separate optional plugin with a required **Lutris Integration** dependency.
+An optional plugin using Playlite’s core Lutris support.
 Adds **Use Ultimate Mapper for this play action** to Windows/Wine play actions.
 There is no global default. Native games and other integrations are unaffected.
 
@@ -29,7 +29,7 @@ Cancel option. The mapper must have its executable on PATH or an installed
 the game launches. Only the selected action is checked.
 
 The plugin uses Playlite's primary action contributions, save transaction, and
-selected-action launch hooks. Lutris Integration itself contains no mapper UI or
+selected-action launch hooks. Playlite’s core Lutris support contains no mapper UI or
 mapper-specific launch logic. No system-wide environment, game binaries, or
 additional packages are changed.
 

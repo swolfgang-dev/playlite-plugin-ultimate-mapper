@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+dist/
+test-data/
+test-config/
+test-state/

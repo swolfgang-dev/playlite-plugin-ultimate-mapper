@@ -20,17 +20,14 @@ def configuration_path(root, identity):
     if not identity.isascii() or not identity.isdigit() or int(identity) < 1:
         raise ValueError('Save a valid Lutris game ID before changing Ultimate Mapper.')
     root = Path(root)
-    with closing(sqlite3.connect((root / 'pga.db').as_uri() + '?mode=ro', uri=True)) as db:
+    database = root if root.is_file() else root / 'pga.db'
+    with closing(sqlite3.connect(database.as_uri() + '?mode=ro', uri=True)) as db:
         row = db.execute('SELECT runner,configpath FROM games WHERE id=?', (int(identity),)).fetchone()
     if row is None or row[0] != 'wine':
         raise ValueError('Ultimate Mapper is available only for Windows/Wine play actions.')
-    name = row[1]
-    if not isinstance(name, str) or not name or Path(name).name != name or '\\' in name:
-        raise ValueError('Invalid Lutris configuration path.')
-    path = root / 'games' / (name + '.yml')
-    if path.is_symlink() or path.resolve().parent != (root / 'games').resolve():
-        raise ValueError('Unsafe Lutris configuration path.')
-    return path
+    from playlite.lutris_library import configuration_path as locate
+    return locate(database, identity)
+
 
 
 def read_configuration(path):
@@ -165,7 +162,7 @@ def save_actions(game, root):
         checked = action['UltimateMapper']
         if type(checked) is not bool:
             raise ValueError('Ultimate Mapper must be enabled or disabled.')
-        path = configuration_path(root, action.get('GameId'))
+        path = configuration_path(root(action) if callable(root) else root, action.get('GameId'))
         read_configuration(path)
         if path in changes and changes[path] != checked:
             raise ValueError('Actions sharing a Lutris entry must use the same Ultimate Mapper setting.')
@@ -191,7 +188,7 @@ class ActionSettings(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.use_ultimate_mapper = QCheckBox('Use Ultimate Mapper for this play action')
         try:
-            path = configuration_path(root, action.get('GameId'))
+            path = configuration_path(root(action) if callable(root) else root, action.get('GameId'))
             self.initial_mapper = enabled(read_configuration(path))
             self.use_ultimate_mapper.setChecked(self.initial_mapper)
         except (OSError, ValueError, sqlite3.Error, yaml.YAMLError) as failure:

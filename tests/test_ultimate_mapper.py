@@ -37,8 +37,8 @@ class MapperTests(unittest.TestCase):
 
     def test_toggle_waits_for_save_and_reopens(self):
         original_other = self.other.read_bytes()
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime:
-            runtime.return_value.library_path.return_value = self.root
+        with patch('mapper_plugin_test.plugin.library_path') as runtime:
+            runtime.return_value = self.root
             editor = Plugin().create_action_settings({'GameId': '1', 'Integration': 'LutrisIntegration'})
             editor.use_ultimate_mapper.setChecked(True)
             action = dict(editor.collect(), Integration='LutrisIntegration', GameId='1')
@@ -83,9 +83,9 @@ class MapperTests(unittest.TestCase):
 
     def test_launch_checks_only_the_selected_enabled_lutris_action(self):
         plugin = Plugin()
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime, \
+        with patch('mapper_plugin_test.plugin.library_path') as runtime, \
              patch.object(mapper, 'ensure_controller') as ready:
-            runtime.return_value.library_path.return_value = self.root
+            runtime.return_value = self.root
             other = {'Integration': 'LutrisIntegration', 'GameId': '2'}
             selected = {'Integration': 'LutrisIntegration', 'GameId': '1'}
             self.assertTrue(plugin.before_action_launch(None, {}, other))
@@ -107,8 +107,8 @@ class MapperTests(unittest.TestCase):
 
     def test_cancel_discards_toggle_without_writing(self):
         original = self.path.read_bytes()
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime:
-            runtime.return_value.library_path.return_value = self.root
+        with patch('mapper_plugin_test.plugin.library_path') as runtime:
+            runtime.return_value = self.root
             editor = Plugin().create_action_settings({'GameId': '1', 'Integration': 'LutrisIntegration'})
         editor.use_ultimate_mapper.setChecked(True)
         editor.collect()
@@ -142,8 +142,8 @@ class MapperTests(unittest.TestCase):
 
     def test_changed_action_id_updates_only_new_entry_on_save(self):
         original = self.path.read_bytes()
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime:
-            runtime.return_value.library_path.return_value = self.root
+        with patch('mapper_plugin_test.plugin.library_path') as runtime:
+            runtime.return_value = self.root
             editor = Plugin().create_action_settings({'GameId': '1', 'Integration': 'LutrisIntegration'})
         editor.use_ultimate_mapper.setChecked(True)
         action = dict(editor.collect(), Integration='LutrisIntegration', GameId='2')
@@ -158,11 +158,11 @@ class MapperTests(unittest.TestCase):
         original = self.path.read_bytes()
         action = {'Integration': 'LutrisIntegration', 'GameId': '1', 'UltimateMapper': True}
         plugin = Plugin()
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime, \
+        with patch('mapper_plugin_test.plugin.library_path') as runtime, \
              patch('playlite.providers.discover_plugins', return_value={'UltimateMapper': plugin}), \
              patch('playlite.game_storage._persist_game', side_effect=OSError('disk full')):
             with self.assertRaises(OSError):
-                runtime.return_value.library_path.return_value = self.root
+                runtime.return_value = self.root
                 _save_game(self.root / 'library', [], {'PlayActions': [action]})
         self.assertEqual(self.path.read_bytes(), original)
 
@@ -172,9 +172,9 @@ class MapperTests(unittest.TestCase):
         action = {'Integration': 'LutrisIntegration', 'GameId': '1', 'UltimateMapper': True}
         game = {'Id': 'test-game', 'Name': 'Example', 'PlayActions': [action]}
         plugin = Plugin()
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime, \
+        with patch('mapper_plugin_test.plugin.library_path') as runtime, \
              patch('playlite.providers.discover_plugins', return_value={'UltimateMapper': plugin}):
-            runtime.return_value.library_path.return_value = self.root
+            runtime.return_value = self.root
             save_game(self.root / 'library', [], game)
         self.assertTrue(mapper.configured_for_mapper(self.root, 1))
         saved = json.loads((self.root / 'library/library.json').read_text())[0]
@@ -193,24 +193,19 @@ class MapperTests(unittest.TestCase):
         from PyQt6.QtWidgets import QLabel
         plugin = Plugin()
         self.assertIsNone(plugin.create_action_settings({'Integration': 'SteamIntegration'}))
-        with patch('mapper_plugin_test.plugin.lutris_runtime') as runtime:
-            runtime.return_value.library_path.return_value = self.root
+        with patch('mapper_plugin_test.plugin.library_path') as runtime:
+            runtime.return_value = self.root
             widget = plugin.create_action_settings({'Integration': 'LutrisIntegration', 'GameId': '1'})
         self.assertEqual(widget.action_settings_position, 'primary')
         self.assertFalse(widget.findChildren(QLabel))
         self.assertIn('transparent', widget.styleSheet())
         widget.close()
 
-    def test_manifest_declares_lutris_dependency(self):
+    def test_manifest_uses_core_lutris_support(self):
         import json
-        from playlite.plugin_dependencies import dependencies, missing_dependencies
         manifest = json.loads((root / 'manifest.json').read_text())
-        dependency = list(dependencies(manifest))[0]
-        self.assertEqual(dependency['id'], 'LutrisIntegration')
-        self.assertEqual(missing_dependencies(manifest, []), [dependency])
-        installed = [{'id': 'LutrisIntegration', 'version': dependency['minimum_version'],
-                      'repository': dependency['repository'], 'enabled': True}]
-        self.assertEqual(missing_dependencies(manifest, installed), [])
+        self.assertFalse(manifest.get('plugin_dependencies'))
+        self.assertEqual(manifest['minimum_playlite_version'], '0.2.88')
 
     def test_primary_toggle_stays_visible_and_labels_are_transparent(self):
         from playlite.play_actions import PlayActionsEditor
@@ -220,14 +215,14 @@ class MapperTests(unittest.TestCase):
         plugin = Plugin()
         action = {'Name': 'Play Example', 'Integration': 'LutrisIntegration', 'GameId': '1'}
         with patch('playlite.providers.discover_plugins', return_value={'LutrisIntegration': provider, 'UltimateMapper': plugin}), \
-             patch('mapper_plugin_test.plugin.lutris_runtime') as runtime:
-            runtime.return_value.library_path.return_value = self.root
+             patch('mapper_plugin_test.plugin.library_path') as runtime:
+            runtime.return_value = self.root
             editor = PlayActionsEditor({'PlayActions': [action]}, [provider])
         editor.resize(900, 500); editor.show(); self.app.processEvents()
         card = editor.cards[0]
         contribution = card.settings.contributions[0]
         self.assertTrue(contribution.use_ultimate_mapper.isVisible())
-        self.assertFalse(card.settings.settings.advanced_button.isChecked())
+        self.assertFalse(card.settings.findChild(__import__('PyQt6.QtWidgets', fromlist=['QToolButton']).QToolButton).isVisible())
         self.assertFalse(contribution.findChildren(QLabel))
         self.assertIn('transparent', card.default.styleSheet())
         self.assertIn('transparent', card.game_id_label.styleSheet())
