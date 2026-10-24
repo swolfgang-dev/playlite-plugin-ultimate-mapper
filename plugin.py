@@ -18,7 +18,7 @@ def library_path(action):
 class Plugin(GenericPlugin):
     def create_action_settings(self, action, parent=None):
         if action.get('Integration') == 'LutrisIntegration':
-            return mapper.ActionSettings(action, library_path(action), parent)
+            return mapper.ActionSettings(action, library_path, parent)
         return None
 
     def save_action_settings(self, game):
